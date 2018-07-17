@@ -1,14 +1,12 @@
 language: node_js
 before_install:
-  - npm install npm -g
+- npm install npm -g
 node_js:
   - '6'
   - '8'
   - '9'
   - '10'
 env:
-  matrix:
-    - TEST_SUITE=test-node
   global:
-    secure: gbQ8VqPQWU19sPvCQy0YUdgrdOK/zPPS9oBm0DQrL06mue5sd+IXGOUH/hqgSGNJxR/CbNQt7dTC6Ex0mTXHUasFlrrQUKn1Hr4Esqqqog1A2PgnuXK7AmHuXI18Cva4f8wU1h+HVMLfW9MJ+r1WtwyIg+DAdxWwDKUbIvCtIto=
+    secure: WUSCNXPg9Oyi0ILRqhAqX4PPw0XYWxe5bZ7XiQ6pQMyonYZBgRI2CLmdQB/7VPnhC3a3Yq6rs29ErjknJKKR4rDzUj2jxcRM4Sknck3fBpmsLtVwFVDd3fIZGXZd/MMP7VvdemB1jIhlNwor2CX71lNh0eOQ3QQIBMzq9ugwofiTQUFmdwjZjQGDSO4Y9HbkEE/Pf2cEMuN7bfb1xNPGVE2vTmuTsAdFkbJf+8nHVIgFc9vUXcD/pQyTPoTxTkzORUzhOugZqYRBeS/Q7B3/4r9r/L8ALot3LifDpNA7yMM9nrAM9oJQ2gpjPYV+6vaa4KGJcjXS0fI9HRdhZBrQG4sb8hYFtAf3y/AlMqukvipZmDmSD7/lhW2gWVjVoNGoocU6eSfjPWMJ3GqmEv1PZ6wU6us9lx9RTro7Q1ia1F3iXJHvi5iGwgmDbvJBDpbYmDkkwekQZrXeu/SzAnLOBHjgBpa+Jmw9ZmHdqwNPiyM4BQJNRXPhFPYwxpX7fFcPNUGYoTYUQ+nk+QVa+sdcC/W5ARcBkWM5vV5sdV8xIzyV9K9MuuntWe8XhA5yMy3LcThDnl9sl0FXohZHDocPpEhSBzAZixWTGvgLr9gqInN7hTEf/9jbG+YW+YzELXGdQMFF5LiRk/dp4mL+6rXJDwdlKkmMbY1vElSOdrfjDOQ=
 script: npm run $TEST_SUITE
