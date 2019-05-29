@@ -15,3 +15,7 @@ bin/server.key
 bin/server.crt
 example/test.js
 example/eth/test.js
+*.iml
+.nyc_output/
+coverage.lcov
+dist/

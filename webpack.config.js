@@ -1,12 +1,17 @@
 const path = require('path');
 const webpack = require('webpack');
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
 const glob = require('glob');
 
 // Loaders handle certain extensions and apply transforms
 function setupRules(env) {
-  const rules = [];
+  const rules = [
+    {
+      test: /\.ts$/,
+      loader: 'awesome-typescript-loader',
+    },
+  ];
 
   if (env.prod) {
     // TODO: If we want to add babel, uncomment this. Maybe add an IE flag to CME
@@ -41,29 +46,57 @@ function setupExternals() {
   return externals;
 }
 
+/**
+ * This feature is mostly for browsers where we don't want to have a build with coins that people don't need
+ * In order to specify the coins you want, you must pass the --env.coins="csv coins" flag
+ * If nothing is passed, all coins are going to be available.
+ * In webpack, we have to define via plugin what we want.to exclude but also we want to include the coins if the
+ * user didn't specify anything or in node environments
+ * @param env
+ * @returns [webpack.DefinePlugin]
+ */
+function getCoinsToExclude(env) {
+  if (!env.coins) {
+    return [];
+  }
+
+  const allCoins = ['btc', 'bch', 'bsv', 'btg', 'ltc', 'eth', 'rmg', 'xrp', 'xlm', 'dash', 'zec'];
+  const compileCoins = env.coins.split(',').map(coin => coin.trim().toLowerCase());
+  const invalidCoins = compileCoins.filter(allCoin => {
+    return !allCoins.includes(allCoin);
+  });
+
+  if (invalidCoins.length) {
+    throw new Error(`Invalid coins: ${invalidCoins.join(',')} \n Valid options are: ${allCoins.join(',')}`);
+  }
+
+  return allCoins.filter(allCoin => {
+    return !compileCoins.includes(allCoin);
+  })
+  .map(coin => {
+    return new webpack.DefinePlugin({
+      'process.env': {
+        [`BITGO_EXCLUDE_${coin.toUpperCase()}`]: JSON.stringify('exclude')
+      }
+    });
+  });
+}
+
 // Used for extra processing that does not involve transpilation (e.g. minification)
 function setupPlugins(env) {
+  const excludeCoins = getCoinsToExclude(env);
   const plugins = [
     // This is for handling dynamic requires in third-party libraries
     // By default, webpack will bundle _everything_ that could possibly match the expression
     // inside a dynamic 'require'. This changes Webpack so that it bundles nothing.
-    new webpack.ContextReplacementPlugin(/.*$/, /$NEVER_MATCH^/)
+    new webpack.ContextReplacementPlugin(/.*$/, /$NEVER_MATCH^/),
+    ...excludeCoins
   ];
 
   if (!env.test) {
     // Create a browser.html which automatically includes BitGoJS
     plugins.push(new HTMLWebpackPlugin({ filename: 'browser.html', title: 'BitGo SDK Sandbox' }));
   }
-
-  if (env.prod) {
-    // Minimize output files in production
-    plugins.push(new UglifyJSPlugin({
-      uglifyOptions: {
-        mangle: false
-      }
-    }));
-  }
-
 
   return plugins;
 }
@@ -72,7 +105,7 @@ function setupPlugins(env) {
 function getTestConfig(env) {
   return {
     // Take everything in the test directory
-    entry: glob.sync(path.join(__dirname, 'test', '**', '*.js')),
+    entry: glob.sync(path.join(__dirname, 'test', '**', '*.ts')),
 
     // Output everything into browser/tests.js
     output: {
@@ -100,8 +133,11 @@ module.exports = function setupWebpack(env) {
 
   // Compile source code
   return {
+    resolve: {
+      extensions: ['.ts', '.js']
+    },
     // Main project entry point
-    entry: path.join(__dirname, 'src', 'index.js'),
+    entry: path.join(__dirname, 'src', 'index.ts'),
 
     // Output directory and filename
     // Library acts like 'standalone' for browserify, defines it globally if module system not found
@@ -121,7 +157,20 @@ module.exports = function setupWebpack(env) {
     // Any extra processing
     plugins: setupPlugins(env),
 
+    optimization: {
+      minimizer: [new TerserPlugin({
+        terserOptions: {
+          ecma: 5,
+          warnings: true,
+          mangle: false,
+          keep_classnames: true,
+          keep_fnames: true
+        }
+      })]
+    },
+
     // Create a source map for the bundled code (dev and test only)
-    devtool: !env.prod && 'cheap-eval-source-map'
+    devtool: !env.prod && 'source-map',
+    mode: env.prod ? 'production' : 'development'
   };
 };
